@@ -49,7 +49,9 @@ inline auto PI::busRead(u32 address) -> u32 {
     return cartridge.isviewer.read<Size>(address);
   }
   if(address <= 0x1000'0000 + cartridge.rom.size - 1) {
-    return cartridge.rom.read<Size>(address);
+    //index base-relative: for ROMs >256MiB the power-of-two Readable mask no longer
+    //strips the 0x1000'0000 cart base (bit::round jumps past it), so pass the offset.
+    return cartridge.rom.read<Size>(address - 0x1000'0000);
   }
   return unmapped;
 }
@@ -105,7 +107,9 @@ inline auto PI::busWrite(u32 address, u32 data) -> void {
     }
   }
   if(address <= 0x1000'0000 + cartridge.rom.size - 1) {
-    return cartridge.rom.write<Size>(address, data);
+    //index base-relative (see busRead): keeps >256MiB ROMs from wrapping into the wrong
+    //buffer offset when the power-of-two mask stops covering the 0x1000'0000 base.
+    return cartridge.rom.write<Size>(address - 0x1000'0000, data);
   }
   if(address <= 0x7fff'ffff) return;
 }
