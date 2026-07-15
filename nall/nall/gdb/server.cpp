@@ -47,6 +47,12 @@ namespace nall::GDB {
 
   auto Server::reportWatchpoint(const Watchpoint &wp, u64 address) -> void {
     auto orgAddress = wp.addressStartOrg + (address - wp.addressStart);
+    // Freeze the PRECISE PC of the faulting access. Without this, gdb reads the
+    // live pc register, which under a recompiler has already advanced past the
+    // store to the next block boundary (reporting an unrelated, store-free
+    // instruction). reportSignal already does this for exceptions — watchpoints
+    // were the missing case (see pcOverride's comment in the header).
+    if(hooks.readInstructionPc) pcOverride = hooks.readInstructionPc();
     forceHalt = true;
     haltSignalSent = true;
     sendSignal(Signal::TRAP, {wp.getTypePrefix(), hex(orgAddress), ";"});

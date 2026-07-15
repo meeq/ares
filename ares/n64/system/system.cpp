@@ -380,6 +380,14 @@ auto System::initDebugHooks() -> void {
       cpu.recompiler.invalidateSection((u32)address);
     };
   }
+
+  // Precise stop PC on a data-watchpoint hit. The memory-op fallback (taken
+  // whenever watchpoints are active) sets ipu.pc to the accessing instruction's
+  // exact vaddr via setupCallf() before performing the access, so at the moment
+  // reportMemWrite/reportMemRead fires, cpu.ipu.pc IS the faulting instruction.
+  GDB::server.hooks.readInstructionPc = []() -> u64 {
+    return cpu.ipu.pc;
+  };
 }
 
 auto System::unload() -> void {

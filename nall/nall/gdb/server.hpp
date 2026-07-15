@@ -80,6 +80,11 @@ class Server : public nall::TCPText::Server {
       // Emulator
       std::function<void(u64 address)> emuCacheInvalidate{};
       std::function<string()> targetXML{};
+      // Returns the architectural PC of the instruction currently executing, used
+      // to report a PRECISE stop PC on a data watchpoint hit. Under a recompiler,
+      // the live pc register can lag past the faulting store to the next block
+      // boundary; this lets the write hook freeze the exact store PC via pcOverride.
+      std::function<u64()> readInstructionPc{};
 
 
     } hooks{};
